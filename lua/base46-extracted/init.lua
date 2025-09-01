@@ -1,54 +1,54 @@
 local M = {}
-local g = vim.g
-local opts = require("nvconfig").base46
-local cache_path = vim.g.base46_cache
 
-local integrations = {
-  "blankline",
-  "blink",
-  "cmp",
-  "defaults",
-  "devicons",
-  "git",
-  "lsp",
-  "mason",
-  "nvcheatsheet",
-  "nvimtree",
-  "statusline",
-  "syntax",
-  "treesitter",
-  "tbline",
-  "telescope",
-  "whichkey",
+-- Default user config (can be overridden with setup())
+local config = {
+  theme = "default",
+  transparency = false,
+  hl_override = {},
+  changed_themes = {},
+  cache_path = vim.fn.stdpath "cache" .. "/base46/",
+  integrations = {
+    "blankline",
+    "cmp",
+    "git",
+    "lsp",
+    "mason",
+    "nvimtree",
+    "statusline",
+    "syntax",
+    "treesitter",
+    "telescope",
+    "whichkey",
+  },
 }
 
-for _, value in ipairs(opts.integrations) do
-  table.insert(integrations, value)
+-- Allow user to override defaults
+M.setup = function(opts)
+  config = vim.tbl_deep_extend("force", config, opts or {})
 end
 
-M.get_theme_tb = function(type)
-  local name = opts.theme
-  local present1, default_theme = pcall(require, "base46.themes." .. name)
-  local present2, user_theme = pcall(require, "themes." .. name)
-
-  if present1 then
-    return default_theme[type]
-  elseif present2 then
-    return user_theme[type]
-  else
-    error "No such theme!"
-  end
-end
-
+-- Utility: merge tables
 M.merge_tb = function(...)
   return vim.tbl_deep_extend("force", ...)
 end
 
-local lighten = require("base46.colors").change_hex_lightness
-local mixcolors = require("base46.colors").mix
+-- Load theme tables
+M.get_theme_tb = function(type)
+  local name = config.theme
+  local present, theme = pcall(require, "themes." .. name)
 
--- turns color var names in hl_override/hl_add to actual colors
--- hl_add = { abc = { bg = "one_bg" }} -> bg = colors.one_bg
+  if present then
+    return theme[type]
+  else
+    error("No such theme: " .. name)
+  end
+end
+
+-- Color helpers
+local lighten = require("base46-extracted.colors").change_hex_lightness
+local mixcolors = require("base46-extracted.colors").mix
+
+-- Convert string color names to actual hex values
 M.turn_str_to_color = function(tb)
   local colors = vim.tbl_extend("force", M.get_theme_tb "base_30", M.get_theme_tb "base_16")
   local copy = vim.deepcopy(tb)
@@ -58,11 +58,9 @@ M.turn_str_to_color = function(tb)
       local valtype = type(val)
 
       if opt == "fg" or opt == "bg" or opt == "sp" then
-        -- named colors from base30
-        if valtype == "string" and val:sub(1, 1) ~= "#" and val ~= "none" and val ~= "NONE" then
+        if valtype == "string" and val:sub(1, 1) ~= "#" and val ~= "none" then
           hlgroups[opt] = colors[val]
         elseif valtype == "table" then
-          -- transform table to color
           hlgroups[opt] = #val == 2 and lighten(colors[val[1]], val[2])
             or mixcolors(colors[val[1]], colors[val[2]], val[3])
         end
@@ -73,18 +71,16 @@ M.turn_str_to_color = function(tb)
   return copy
 end
 
+-- Extend highlights with overrides + transparency
 M.extend_default_hl = function(highlights, integration_name)
   local polish_hl = M.get_theme_tb "polish_hl"
 
-  -- polish themes
   if polish_hl and polish_hl[integration_name] then
     highlights = M.merge_tb(highlights, polish_hl[integration_name])
   end
 
-  -- transparency
-  if opts.transparency then
-    local glassy = require "base46.glassy"
-
+  if config.transparency then
+    local glassy = require "base46-extracted.glassy"
     for key, value in pairs(glassy) do
       if highlights[key] then
         highlights[key] = M.merge_tb(highlights[key], value)
@@ -92,9 +88,7 @@ M.extend_default_hl = function(highlights, integration_name)
     end
   end
 
-  local hl_override = opts.hl_override
-  local overriden_hl = M.turn_str_to_color(hl_override)
-
+  local overriden_hl = M.turn_str_to_color(config.hl_override)
   for key, value in pairs(overriden_hl) do
     if highlights[key] then
       highlights[key] = M.merge_tb(highlights[key], value)
@@ -104,113 +98,72 @@ M.extend_default_hl = function(highlights, integration_name)
   return highlights
 end
 
+-- Load integration highlights
 M.get_integration = function(name)
-  local highlights = require("base46.integrations." .. name)
+  local highlights = require("base46-extracted.integrations." .. name)
   return M.extend_default_hl(highlights, name)
 end
 
--- convert table into string
+-- Convert table to string for caching
 M.tb_2str = function(tb)
   local result = ""
-
   for hlgroupName, v in pairs(tb) do
     local hlname = "'" .. hlgroupName .. "',"
     local hlopts = ""
-
     for optName, optVal in pairs(v) do
       local valueInStr = ((type(optVal)) == "boolean" or type(optVal) == "number") and tostring(optVal)
         or '"' .. optVal .. '"'
       hlopts = hlopts .. optName .. "=" .. valueInStr .. ","
     end
-
     result = result .. "vim.api.nvim_set_hl(0," .. hlname .. "{" .. hlopts .. "})"
   end
-
   return result
 end
 
+-- Write compiled highlights to cache
 M.str_to_cache = function(filename, str)
-  -- Thanks to https://github.com/nullchilly and https://github.com/EdenEast/nightfox.nvim
-  -- It helped me understand string.dump stuff
   local lines = "return string.dump(function()" .. str .. "end, true)"
-  local file = io.open(cache_path .. filename, "wb")
-
+  local file = io.open(config.cache_path .. filename, "wb")
   if file then
     file:write(loadstring(lines)())
     file:close()
   end
 end
 
+-- Compile all highlights
 M.compile = function()
-  if not vim.uv.fs_stat(vim.g.base46_cache) then
-    vim.fn.mkdir(cache_path, "p")
+  if not vim.uv.fs_stat(config.cache_path) then
+    vim.fn.mkdir(config.cache_path, "p")
   end
 
-  M.str_to_cache("term", require "base46.term")
-  M.str_to_cache("colors", require "base46.color_vars")
-
-  for _, name in ipairs(integrations) do
+  for _, name in ipairs(config.integrations) do
     local hl_str = M.tb_2str(M.get_integration(name))
-
     if name == "defaults" then
-      hl_str = "vim.o.tgc=true vim.o.bg='" .. M.get_theme_tb "type" .. "' " .. hl_str
+      hl_str = "vim.o.termguicolors=true vim.o.background='" .. M.get_theme_tb "type" .. "' " .. hl_str
     end
-
     M.str_to_cache(name, hl_str)
   end
 end
 
+-- Load all highlights
 M.load_all_highlights = function()
-  require("plenary.reload").reload_module "base46"
   M.compile()
-
-  for _, name in ipairs(integrations) do
-    dofile(vim.g.base46_cache .. name)
+  for _, name in ipairs(config.integrations) do
+    dofile(config.cache_path .. name)
   end
-
-  -- update blankline
-  pcall(function()
-    require("ibl").update()
-  end)
-
-  vim.api.nvim_exec_autocmds("User", { pattern = "NvThemeReload" })
+  vim.api.nvim_exec_autocmds("User", { pattern = "ThemeReload" })
 end
 
-M.override_theme = function(default_theme, theme_name)
-  local changed_themes = opts.changed_themes
-  return M.merge_tb(default_theme, changed_themes.all or {}, changed_themes[theme_name] or {})
-end
-
---------------------------- user functions ----------------------------------------------------------
-M.toggle_theme = function()
-  local themes = opts.theme_toggle
-
-  if opts.theme ~= themes[1] and opts.theme ~= themes[2] then
-    vim.notify "Set your current theme to one of those mentioned in the theme_toggle table (chadrc)"
-    return
-  end
-
-  g.icon_toggled = not g.icon_toggled
-  g.toggle_theme_icon = g.icon_toggled and "   " or "   "
-
-  opts.theme = (themes[1] == opts.theme and themes[2]) or themes[1]
-
-  package.loaded.chadrc = nil
-  local chadrc = require "chadrc"
-  local old_theme = chadrc.base46.theme
-
-  require("nvchad.utils").replace_word('theme = "' .. old_theme, 'theme = "' .. opts.theme)
+-- Programmatically set theme
+M.set_theme = function(name)
+  config.theme = name
   M.load_all_highlights()
 end
 
+-- Toggle transparency
 M.toggle_transparency = function()
-  opts.transparency = not opts.transparency
+  config.transparency = not config.transparency
   M.load_all_highlights()
-
-  package.loaded.chadrc = nil
-  local old = require("chadrc").base46.transparency
-  local new = "transparency = " .. tostring(opts.transparency)
-  require("nvchad.utils").replace_word("transparency = " .. tostring(old), new)
 end
 
 return M
