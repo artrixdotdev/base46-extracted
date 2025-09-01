@@ -158,7 +158,7 @@ M.polish_hl = {
 M.type = "dark" -- "or light"
 
 -- this will be later used for users to override your theme table from chadrc
-M = require("base46").override_theme(M, "abc")
+M = require("base46-extracted").override_theme(M, "abc")
 
 return M
 ```
