@@ -2,11 +2,11 @@ local M = {}
 
 -- Default user config (can be overridden with setup())
 local config = {
-  theme = "default",
+  theme = "dracula",
   transparency = false,
   hl_override = {},
   changed_themes = {},
-  cache_path = vim.fn.stdpath "cache" .. "/base46/",
+  cache_path = vim.fn.stdpath "data" .. "/base46/",
   integrations = {
     "blankline",
     "cmp",
@@ -34,15 +34,29 @@ end
 
 -- Load theme tables
 M.get_theme_tb = function(type)
-  local name = config.theme
-  local present, theme = pcall(require, "themes." .. name)
+  -- local name = config.theme
+  -- local present1, default_theme = pcall(require, "base46-extracted.themes." .. name)
+  -- local present2, user_theme = pcall(require, "themes." .. name)
 
-  if present then
-    return theme[type]
-  else
-    error("No such theme: " .. name)
-  end
+  -- if present1 then
+  --   return default_theme[type]
+  -- elseif present2 then
+  --   return user_theme[type]
+  -- else
+  --   error("No such theme: " .. name)
+  -- end
+
+ return require("base46-extracted.themes.chocolate")[type]
+
+
 end
+
+
+M.override_theme = function(default_theme, theme_name)
+  local changed_themes = config.changed_themes
+  return M.merge_tb(default_theme, changed_themes.all or {}, changed_themes[theme_name] or {})
+end
+
 
 -- Color helpers
 local lighten = require("base46-extracted.colors").change_hex_lightness
@@ -165,5 +179,7 @@ M.toggle_transparency = function()
   config.transparency = not config.transparency
   M.load_all_highlights()
 end
+
+M.config = config
 
 return M

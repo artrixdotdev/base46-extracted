@@ -85,6 +85,4 @@ local defaults = {
 }
 
 -- merge statusline & hl_add tables!
-local merge_tb = require("base46-extracted").merge_tb
-local hexify_ColorStrs = require("base46-extracted").turn_str_to_color
-return merge_tb(defaults, hexify_ColorStrs(require("nvconfig").base46.hl_add))
+return defaults

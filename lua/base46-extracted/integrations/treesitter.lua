@@ -1,7 +1,7 @@
 local theme = require("base46-extracted").get_theme_tb "base_16"
 local base30 = require("base46-extracted").get_theme_tb "base_30"
 
-local opts = require("nvconfig").base46
+local opts = require("base46-extracted").config
 
 return {
 
