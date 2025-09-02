@@ -1,7 +1,7 @@
 local opts = require("base46-extracted").config
 local str = ""
 
-local present1, default_theme = pcall(require, "base46.themes." .. opts.theme)
+local present1, default_theme = pcall(require, "base46-extracted.themes." .. opts.theme)
 local colors = (present1 and default_theme) or require("themes." .. opts.theme)
 
 for name, hex in pairs(colors.base_30) do

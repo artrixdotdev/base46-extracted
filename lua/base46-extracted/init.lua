@@ -2,7 +2,7 @@ local M = {}
 
 -- Default user config (can be overridden with setup())
 local config = {
-  theme = "catppuccin",
+  theme = "tundra",
   transparency = false,
   hl_override = {},
   changed_themes = {},
@@ -25,12 +25,14 @@ local config = {
 -- Allow user to override defaults
 M.setup = function(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
-  M.load_all_highlights()
-end
 
--- Utility: merge tables
-M.merge_tb = function(...)
-  return vim.tbl_deep_extend("force", ...)
+  if opts and opts.integrations then
+    for _, value in ipairs(opts.integrations) do
+      table.insert(config.integrations, value)
+    end
+  end
+
+  M.load_all_highlights()
 end
 
 -- Load theme tables
@@ -84,6 +86,12 @@ M.turn_str_to_color = function(tb)
   return copy
 end
 
+
+
+M.merge_tb = function(...)
+  return vim.tbl_deep_extend("force", ...)
+end
+
 -- Extend highlights with overrides + transparency
 M.extend_default_hl = function(highlights, integration_name)
   local polish_hl = M.get_theme_tb "polish_hl"
@@ -101,7 +109,9 @@ M.extend_default_hl = function(highlights, integration_name)
     end
   end
 
-  local overriden_hl = M.turn_str_to_color(config.hl_override)
+  local hl_override = config.hl_override
+  local overriden_hl = M.turn_str_to_color(hl_override)
+
   for key, value in pairs(overriden_hl) do
     if highlights[key] then
       highlights[key] = M.merge_tb(highlights[key], value)
@@ -145,15 +155,20 @@ end
 
 -- Compile all highlights
 M.compile = function()
-  if not vim.uv.fs_stat(config.cache_path) then
-    vim.fn.mkdir(config.cache_path, "p")
-  end
+if not vim.uv.fs_stat(config.cache_path) then
+  vim.fn.mkdir(config.cache_path, "p")
+end
+
+  M.str_to_cache("term", require "base46-extracted.term")
+  M.str_to_cache("colors", require "base46-extracted.color_vars")
 
   for _, name in ipairs(config.integrations) do
     local hl_str = M.tb_2str(M.get_integration(name))
+
     if name == "defaults" then
-      hl_str = "vim.o.termguicolors=true vim.o.background='" .. M.get_theme_tb "type" .. "' " .. hl_str
+      hl_str = "vim.o.tgc=true vim.o.bg='" .. M.get_theme_tb "type" .. "' " .. hl_str
     end
+
     M.str_to_cache(name, hl_str)
   end
 end
