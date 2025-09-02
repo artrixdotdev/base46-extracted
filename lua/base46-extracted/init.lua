@@ -48,17 +48,12 @@ M.get_theme_tb = function(type)
   else
     error("No such theme: " .. name)
   end
-
-
-
 end
-
 
 M.override_theme = function(default_theme, theme_name)
   local changed_themes = config.changed_themes
   return M.merge_tb(default_theme, changed_themes.all or {}, changed_themes[theme_name] or {})
 end
-
 
 -- Color helpers
 local lighten = require("base46-extracted.colors").change_hex_lightness
@@ -85,8 +80,6 @@ M.turn_str_to_color = function(tb)
   end
   return copy
 end
-
-
 
 M.merge_tb = function(...)
   return vim.tbl_deep_extend("force", ...)
@@ -155,9 +148,9 @@ end
 
 -- Compile all highlights
 M.compile = function()
-if not vim.uv.fs_stat(config.cache_path) then
-  vim.fn.mkdir(config.cache_path, "p")
-end
+  if not vim.uv.fs_stat(config.cache_path) then
+    vim.fn.mkdir(config.cache_path, "p")
+  end
 
   M.str_to_cache("term", require "base46-extracted.term")
   M.str_to_cache("colors", require "base46-extracted.color_vars")
@@ -175,7 +168,6 @@ end
 
 -- Load all highlights
 M.load_all_highlights = function()
-require("plenary.reload").reload_module "base46-extracted"
   M.compile()
   for _, name in ipairs(config.integrations) do
     dofile(config.cache_path .. name)
