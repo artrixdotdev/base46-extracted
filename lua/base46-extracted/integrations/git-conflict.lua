@@ -1,5 +1,5 @@
 local colors = require("base46-extracted").get_theme_tb "base_30"
-local mix_col = require("base46.colors").mix
+local mix_col = require("base46-extracted.colors").mix
 
 -- Need to manually re-configure git-conflict.nvim to use these highlight groups.
 -- See: https://github.com/akinsho/git-conflict.nvim?tab=readme-ov-file#configuration

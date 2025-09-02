@@ -1,6 +1,6 @@
 local base16 = require("base46-extracted").get_theme_tb "base_16"
 local colors = require("base46-extracted").get_theme_tb "base_30"
-local mixcolors = require("base46.colors").mix
+local mixcolors = require("base46-extracted.colors").mix
 
 local highlights = {
   CmpItemAbbr = { fg = colors.white },
@@ -97,7 +97,7 @@ local styles = {
   },
 }
 
-local generate_color = require("base46.colors").change_hex_lightness
+local generate_color = require("base46-extracted.colors").change_hex_lightness
 
 local black2_l = generate_color(colors.black2, 6)
 local black2_d = generate_color(colors.black2, -6)

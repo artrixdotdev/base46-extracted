@@ -1,6 +1,6 @@
 local colors = require("base46-extracted").get_theme_tb "base_30"
 local theme = require("base46-extracted").get_theme_tb "base_16"
-local lighten = require("base46.colors").change_hex_lightness
+local lighten = require("base46-extracted.colors").change_hex_lightness
 
 local defaults = {
   Added = { fg = colors.green },

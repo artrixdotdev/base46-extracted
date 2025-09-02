@@ -1,5 +1,5 @@
 local colors = require("base46-extracted").get_theme_tb "base_30"
-local mix = require("base46.colors").mix
+local mix = require("base46-extracted.colors").mix
 
 return {
   ["@markup.heading.1.markdown"] = { fg = colors.red },

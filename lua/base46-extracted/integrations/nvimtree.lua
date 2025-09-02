@@ -1,7 +1,7 @@
 local get_theme_tb = require("base46-extracted").get_theme_tb
 local colors = get_theme_tb "base_30"
 local theme_type = get_theme_tb "type"
-local tune_color = require("base46.colors").change_hex_lightness
+local tune_color = require("base46-extracted.colors").change_hex_lightness
 
 return {
   NvimTreeEmptyFolderName = { fg = colors.folder_bg },

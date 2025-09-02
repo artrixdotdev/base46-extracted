@@ -1,5 +1,5 @@
 local colors = require("base46-extracted").get_theme_tb "base_30"
-local mix_col = require("base46.colors").mix
+local mix_col = require("base46-extracted.colors").mix
 
 local highligths = {
   TinyInlineDiagnosticVirtualTextArrow = { fg = colors.white, bg = colors.black },

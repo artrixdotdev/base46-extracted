@@ -1,6 +1,6 @@
 local theme = require("base46-extracted").get_theme_tb "base_16"
 local colors = require("base46-extracted").get_theme_tb "base_30"
-local mix = require("base46.colors").mix
+local mix = require("base46-extracted.colors").mix
 
 return {
 

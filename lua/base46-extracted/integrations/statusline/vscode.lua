@@ -2,7 +2,7 @@ local config = require "nvconfig"
 local get_theme_tb = require("base46-extracted").get_theme_tb
 local theme_type = get_theme_tb "type"
 local colors = get_theme_tb "base_30"
-local lighten = require("base46.colors").change_hex_lightness
+local lighten = require("base46-extracted.colors").change_hex_lightness
 
 local statusline_bg = config.base46.transparency and "NONE" or lighten(colors.statusline_bg, 1)
 local light_grey = lighten(colors.light_grey, 8)
