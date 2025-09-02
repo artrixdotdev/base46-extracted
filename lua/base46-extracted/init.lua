@@ -6,7 +6,7 @@ local config = {
   transparency = false,
   hl_override = {},
   changed_themes = {},
-  cache_path = vim.fn.stdpath "data" .. "/base46/",
+  cache_path = vim.fn.stdpath "data" .. "/base46-extracted/",
   integrations = {
     "blankline",
     "cmp",
