@@ -2,7 +2,7 @@ local M = {}
 
 -- Default user config (can be overridden with setup())
 local config = {
-  theme = "dracula",
+  theme = "catppuccin",
   transparency = false,
   hl_override = {},
   changed_themes = {},
@@ -25,6 +25,7 @@ local config = {
 -- Allow user to override defaults
 M.setup = function(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
+  M.load_all_highlights()
 end
 
 -- Utility: merge tables
@@ -34,19 +35,18 @@ end
 
 -- Load theme tables
 M.get_theme_tb = function(type)
-  -- local name = config.theme
-  -- local present1, default_theme = pcall(require, "base46-extracted.themes." .. name)
-  -- local present2, user_theme = pcall(require, "themes." .. name)
+  local name = config.theme
+  local present1, default_theme = pcall(require, "base46-extracted.themes." .. name)
+  local present2, user_theme = pcall(require, "themes." .. name)
 
-  -- if present1 then
-  --   return default_theme[type]
-  -- elseif present2 then
-  --   return user_theme[type]
-  -- else
-  --   error("No such theme: " .. name)
-  -- end
+  if present1 then
+    return default_theme[type]
+  elseif present2 then
+    return user_theme[type]
+  else
+    error("No such theme: " .. name)
+  end
 
- return require("base46-extracted.themes.chocolate")[type]
 
 
 end
