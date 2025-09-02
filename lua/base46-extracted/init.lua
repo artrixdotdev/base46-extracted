@@ -72,7 +72,7 @@ M.turn_str_to_color = function(tb)
       local valtype = type(val)
 
       if opt == "fg" or opt == "bg" or opt == "sp" then
-        if valtype == "string" and val:sub(1, 1) ~= "#" and val ~= "none" then
+        if valtype == "string" and val:sub(1, 1) ~= "#" and val ~= "none" and val ~= "NONE" then
           hlgroups[opt] = colors[val]
         elseif valtype == "table" then
           hlgroups[opt] = #val == 2 and lighten(colors[val[1]], val[2])
@@ -81,7 +81,6 @@ M.turn_str_to_color = function(tb)
       end
     end
   end
-
   return copy
 end
 
@@ -161,6 +160,7 @@ end
 
 -- Load all highlights
 M.load_all_highlights = function()
+require("plenary.reload").reload_module "base46-extracted"
   M.compile()
   for _, name in ipairs(config.integrations) do
     dofile(config.cache_path .. name)
