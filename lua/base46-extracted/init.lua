@@ -115,6 +115,7 @@ M.install_integration = function(name, highlights)
   local extended = M.extend_default_hl(highlights, name)
   config.integrations[name] = extended
   M.apply_highlights(extended)
+  vim.notify("Integration '" .. name .. "' installed successfully!", "info")
 end
 
 -- Load all highlights (apply everything fresh)
