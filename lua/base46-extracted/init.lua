@@ -1,34 +1,22 @@
 local M = {}
 
--- Default user config (can be overridden with setup())
+-- Default user config
 local config = {
   theme = "tundra",
   transparency = false,
   hl_override = {},
   changed_themes = {},
-  cache_path = vim.fn.stdpath "data" .. "/base46-extracted/",
-  integrations = {
-    "blankline",
-    "cmp",
-    "git",
-    "lsp",
-    "mason",
-    "nvimtree",
-    "statusline",
-    "syntax",
-    "treesitter",
-    "telescope",
-    "whichkey",
-  },
+  integrations = {}, -- user-defined integrations only
 }
 
 -- Allow user to override defaults
 M.setup = function(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
 
+  -- If user passed custom integrations, install them
   if opts and opts.integrations then
-    for _, value in ipairs(opts.integrations) do
-      table.insert(config.integrations, value)
+    for name, hl in pairs(opts.integrations) do
+      M.install_integration(name, hl)
     end
   end
 
@@ -114,63 +102,25 @@ M.extend_default_hl = function(highlights, integration_name)
   return highlights
 end
 
--- Load integration highlights
-M.get_integration = function(name)
-  local highlights = require("base46-extracted.integrations." .. name)
-  return M.extend_default_hl(highlights, name)
-end
-
--- Convert table to string for caching
-M.tb_2str = function(tb)
-  local result = ""
-  for hlgroupName, v in pairs(tb) do
-    local hlname = "'" .. hlgroupName .. "',"
-    local hlopts = ""
-    for optName, optVal in pairs(v) do
-      local valueInStr = ((type(optVal)) == "boolean" or type(optVal) == "number") and tostring(optVal)
-        or '"' .. optVal .. '"'
-      hlopts = hlopts .. optName .. "=" .. valueInStr .. ","
-    end
-    result = result .. "vim.api.nvim_set_hl(0," .. hlname .. "{" .. hlopts .. "})"
-  end
-  return result
-end
-
--- Write compiled highlights to cache
-M.str_to_cache = function(filename, str)
-  local lines = "return string.dump(function()" .. str .. "end, true)"
-  local file = io.open(config.cache_path .. filename, "wb")
-  if file then
-    file:write(loadstring(lines)())
-    file:close()
+-- Apply highlights directly
+M.apply_highlights = function(hl_table)
+  local colored = M.turn_str_to_color(hl_table)
+  for group, opts in pairs(colored) do
+    vim.api.nvim_set_hl(0, group, opts)
   end
 end
 
--- Compile all highlights
-M.compile = function()
-  if not vim.uv.fs_stat(config.cache_path) then
-    vim.fn.mkdir(config.cache_path, "p")
-  end
-
-  M.str_to_cache("term", require "base46-extracted.term")
-  M.str_to_cache("colors", require "base46-extracted.color_vars")
-
-  for _, name in ipairs(config.integrations) do
-    local hl_str = M.tb_2str(M.get_integration(name))
-
-    if name == "defaults" then
-      hl_str = "vim.o.tgc=true vim.o.bg='" .. M.get_theme_tb "type" .. "' " .. hl_str
-    end
-
-    M.str_to_cache(name, hl_str)
-  end
+-- Install a new integration (user-defined)
+M.install_integration = function(name, highlights)
+  local extended = M.extend_default_hl(highlights, name)
+  config.integrations[name] = extended
+  M.apply_highlights(extended)
 end
 
--- Load all highlights
+-- Load all highlights (apply everything fresh)
 M.load_all_highlights = function()
-  M.compile()
-  for _, name in ipairs(config.integrations) do
-    dofile(config.cache_path .. name)
+  for _, hl in pairs(config.integrations) do
+    M.apply_highlights(hl)
   end
   vim.api.nvim_exec_autocmds("User", { pattern = "ThemeReload" })
 end
