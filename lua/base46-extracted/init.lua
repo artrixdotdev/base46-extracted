@@ -105,8 +105,8 @@ end
 -- Apply highlights directly
 M.apply_highlights = function(hl_table)
   local colored = M.turn_str_to_color(hl_table)
+
   for group, opts in pairs(colored) do
-    print("Applying HL:", group, vim.inspect(opts))
     vim.api.nvim_set_hl(0, group, opts)
   end
 end
@@ -116,7 +116,6 @@ M.install_integration = function(name, highlights)
   local extended = M.extend_default_hl(highlights, name)
   config.integrations[name] = extended
   M.apply_highlights(extended)
-  vim.notify("Integration '" .. name .. "' installed successfully!", "info")
 end
 
 -- Load all highlights (apply everything fresh)
@@ -126,6 +125,7 @@ M.load_all_highlights = function()
     merged = M.merge_tb(merged, hl)
   end
   M.apply_highlights(merged)
+
   vim.api.nvim_exec_autocmds("User", { pattern = "ThemeReload" })
 end
 
