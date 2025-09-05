@@ -106,6 +106,7 @@ end
 M.apply_highlights = function(hl_table)
   local colored = M.turn_str_to_color(hl_table)
   for group, opts in pairs(colored) do
+    print("Applying HL:", group, vim.inspect(opts))
     vim.api.nvim_set_hl(0, group, opts)
   end
 end
@@ -120,9 +121,11 @@ end
 
 -- Load all highlights (apply everything fresh)
 M.load_all_highlights = function()
+  local merged = {}
   for _, hl in pairs(config.integrations) do
-    M.apply_highlights(hl)
+    merged = M.merge_tb(merged, hl)
   end
+  M.apply_highlights(merged)
   vim.api.nvim_exec_autocmds("User", { pattern = "ThemeReload" })
 end
 
